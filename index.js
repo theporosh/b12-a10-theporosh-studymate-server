@@ -33,6 +33,7 @@ async function run() {
         const studentsCollection = db.collection('students')
         const newPartnerProfileCollection = db.collection('partners');
 
+        // add database related apis here
         // Create Partner Profile api
         app.post('/partners', async (req, res) => {
             const newPartner = req.body;
@@ -52,7 +53,8 @@ async function run() {
         })
 
 
-        // add database related apis here
+        
+        // Find Study Partners
         app.get('/students', async (req, res) => {
 
             // const email = req.query.email;
