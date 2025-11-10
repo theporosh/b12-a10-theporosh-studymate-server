@@ -34,6 +34,7 @@ async function run() {
         const newPartnerProfileCollection = db.collection('partners');
 
         // add database related apis here
+
         // Create Partner Profile api
         app.post('/partners', async (req, res) => {
             const newPartner = req.body;
@@ -53,7 +54,7 @@ async function run() {
         })
 
 
-        
+
         // Find Study Partners
         app.get('/students', async (req, res) => {
 
@@ -64,46 +65,52 @@ async function run() {
             res.send(result)
         })
 
+        // GET single partner for PartnerDetails
         app.get('/students/:id', async (req, res) => {
             const id = req.params.id
             // console.log('need user with id' , id)
-            const query = { _id: new ObjectId(id) }
+            // const result = await studentsCollection.findOne({ _id: new ObjectId(id) });
+            // res.send(result);
+
+
+            // const query = { _id: new ObjectId(id) }
+            const query = { _id: id }
             const result = await studentsCollection.findOne(query);
             res.send(result)
         })
 
-        app.post('/students', async (req, res) => {
-            // console.log('hitting the users post api')
-            const newStudent = req.body;
-            // console.log('user info', newStudent)
-            const result = await studentsCollection.insertOne(newStudent);
-            res.send(result);
-        })
+        // app.post('/students', async (req, res) => {
+        //     // console.log('hitting the users post api')
+        //     const newStudent = req.body;
+        //     // console.log('user info', newStudent)
+        //     const result = await studentsCollection.insertOne(newStudent);
+        //     res.send(result);
+        // })
 
-        app.patch('/students/:id', async (req, res) => {
-            const id = req.params.id
-            const updatedUser = req.body;
-            console.log('to update', id, updatedUser);
-            const query = { _id: new ObjectId(id) }
-            const update = {
-                $set: {
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                }
-            }
-            const options = {}
-            const result = await studentsCollection.updateOne(query, update, options)
-            res.send(result)
-        })
+        // app.patch('/students/:id', async (req, res) => {
+        //     const id = req.params.id
+        //     const updatedUser = req.body;
+        //     console.log('to update', id, updatedUser);
+        //     const query = { _id: new ObjectId(id) }
+        //     const update = {
+        //         $set: {
+        //             name: updatedUser.name,
+        //             email: updatedUser.email,
+        //         }
+        //     }
+        //     const options = {}
+        //     const result = await studentsCollection.updateOne(query, update, options)
+        //     res.send(result)
+        // })
 
-        app.delete('/students/:id', async (req, res) => {
-            // console.log(req.params.id)
-            const id = req.params.id
-            // console.log('delete users');
-            const query = { _id: new ObjectId(id) }
-            const result = await studentsCollection.deleteOne(query);
-            res.send(result);
-        })
+        // app.delete('/students/:id', async (req, res) => {
+        //     // console.log(req.params.id)
+        //     const id = req.params.id
+        //     // console.log('delete users');
+        //     const query = { _id: new ObjectId(id) }
+        //     const result = await studentsCollection.deleteOne(query);
+        //     res.send(result);
+        // })
 
 
         await client.db("admin").command({ ping: 1 });
