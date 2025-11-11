@@ -66,6 +66,30 @@ async function run() {
             res.send(result)
         })
 
+
+
+        // Get Top Study Partners (highest rating first)
+        app.get('/topstudy-partners', async (req, res) => {
+            try {
+                // Fetch top-rated study partners, sort descending by rating, limit 3
+                const topPartners = await studentsCollection
+                    .find({})
+                    .sort({ rating: -1 })
+                    .limit(3)
+                    .toArray();
+
+                res.send(topPartners);
+            } 
+            catch (error) {
+                console.error("Error fetching top study partners:", error);
+                res.status(500).send({ error: "Failed to fetch top partners" });
+            }
+        });
+
+
+
+
+
         // GET single partner for PartnerDetails
         app.get('/students/:id', async (req, res) => {
             const id = req.params.id
