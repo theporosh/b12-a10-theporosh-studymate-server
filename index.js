@@ -175,6 +175,29 @@ async function run() {
         });
 
 
+        //  Update a request from request_partner
+        app.patch("/request_partner/:id", async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            if (!ObjectId.isValid(id)) return res.status(400).send({ error: "Invalid ID" });
+
+            try {
+                const result = await newRequestPartnerProfileCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateData }
+                );
+
+                if (result.modifiedCount === 0)
+                    return res.status(404).send({ error: "No document updated" });
+
+                res.send({ success: true, message: "Request updated successfully" });
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Failed to update request" });
+            }
+        });
+
+
         // app.delete('/students/:id', async (req, res) => {
         //     // console.log(req.params.id)
         //     const id = req.params.id
