@@ -157,7 +157,23 @@ async function run() {
         });
 
 
-      
+        // Delete a request from db request_partner
+        app.delete("/request_partner/:id", async (req, res) => {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) return res.status(400).send({ error: "Invalid ID" });
+
+            try {
+                const result = await newRequestPartnerProfileCollection.deleteOne({ _id: new ObjectId(id) });
+                if (result.deletedCount === 0)
+                    return res.status(404).send({ error: "Request not found" });
+
+                res.send({ success: true, message: "Request deleted" });
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Internal Server Error" });
+            }
+        });
+
 
         // app.delete('/students/:id', async (req, res) => {
         //     // console.log(req.params.id)
