@@ -32,6 +32,7 @@ async function run() {
         const db = client.db('studyMate_db');
         const studentsCollection = db.collection('students')
         const newPartnerProfileCollection = db.collection('partners');
+        const newRequestPartnerProfileCollection = db.collection('request_partner');
 
         // add database related apis here
 
@@ -87,21 +88,59 @@ async function run() {
         //     res.send(result);
         // })
 
-        // app.patch('/students/:id', async (req, res) => {
-        //     const id = req.params.id
-        //     const updatedUser = req.body;
-        //     console.log('to update', id, updatedUser);
-        //     const query = { _id: new ObjectId(id) }
-        //     const update = {
-        //         $set: {
-        //             name: updatedUser.name,
-        //             email: updatedUser.email,
-        //         }
-        //     }
-        //     const options = {}
-        //     const result = await studentsCollection.updateOne(query, update, options)
-        //     res.send(result)
-        // })
+        // PATCH partner count in partner details page and mongodb by press send partner request api
+        app.patch("/students/:id", async (req, res) => {
+            const id = req.params.id;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).send({ error: "Invalid partner ID" });
+            }
+
+            try {
+                const result = await studentsCollection.updateOne(
+                    { _id: id },
+                    { $inc: { partnerCount: 1 } } 
+                );
+
+                if (result.modifiedCount === 0) {
+                    return res.status(404).send({ error: "Partner not found" });
+                }
+
+                res.send({ success: true, message: "Partner count incremented" });
+            } catch (error) {
+                console.error("Error incrementing partner count:", error);
+                res.status(500).send({ error: "Internal server error" });
+            }
+            // const query = { _id: new ObjectId(id) }
+            // const update = {
+            //     $set: {
+            //         name: updatedUser.name,
+            //         email: updatedUser.email,
+            //     }
+            // }
+            // const options = {}
+            // const result = await studentsCollection.updateOne(query, update, options)
+            // res.send(result)
+        })
+
+        // POST — Create(send) Partner Request details in another db called request_partner with login user name and email
+
+        app.post("/request_partner", async (req, res) => {
+            const requestData = req.body;
+
+            if (!requestData.partnerId || !requestData.requesterEmail) {
+                return res.status(400).send({ error: "Missing required fields" });
+            }
+
+            try {
+                const result = await newRequestPartnerProfileCollection.insertOne(requestData);
+                res.send({ success: true, message: "Partner request saved", result });
+            } catch (error) {
+                console.error("Error saving partner request:", error);
+                res.status(500).send({ error: "Internal server error" });
+            }
+        });
+
 
         // app.delete('/students/:id', async (req, res) => {
         //     // console.log(req.params.id)
