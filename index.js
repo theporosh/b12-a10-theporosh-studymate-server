@@ -99,7 +99,7 @@ async function run() {
             try {
                 const result = await studentsCollection.updateOne(
                     { _id: id },
-                    { $inc: { partnerCount: 1 } } 
+                    { $inc: { partnerCount: 1 } }
                 );
 
                 if (result.modifiedCount === 0) {
@@ -141,6 +141,23 @@ async function run() {
             }
         });
 
+
+        // Get all requests data from request_partner of a specific user 
+        app.get("/request_partner", async (req, res) => {
+            const email = req.query.email;
+            if (!email) return res.status(400).send({ error: "Email query missing" });
+
+            try {
+                const result = await newRequestPartnerProfileCollection.find({ requesterEmail: email }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Failed to fetch partner requests" });
+            }
+        });
+
+
+      
 
         // app.delete('/students/:id', async (req, res) => {
         //     // console.log(req.params.id)
