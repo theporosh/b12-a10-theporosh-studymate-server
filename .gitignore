@@ -1,3 +1,4 @@
 node_modules
 .env
 b12-a10-poroshstudymate-firebase-admin-key.json
+.vercel

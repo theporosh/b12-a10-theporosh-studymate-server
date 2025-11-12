@@ -7,7 +7,9 @@ const port = process.env.PORT || 3000;
 
 const admin = require("firebase-admin");
 
-const serviceAccount = require("./b12-a10-poroshstudymate-firebase-admin-key.json");
+//index.js
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -36,11 +38,11 @@ const verifyFireBaseToken = async (req, res, next) => {
     try {
         const decoded = await admin.auth().verifyIdToken(token);
         req.token_email = decoded.email;
-        console.log('after decode token validation', decoded)
+        // console.log('after decode token validation', decoded)
         next();
     }
     catch (error) {
-        console.log('invalid token')
+        // console.log('invalid token')
         return res.status(401).send({ message: 'unauthorized access' })
     }
 }
@@ -84,7 +86,7 @@ async function run() {
             try {
                 const search = req.query.search || ""; // e.g. ?search=math
                 const sortOption = req.query.sort || ""; // e.g. ?sort=experience
-                console.log('server receive', search, sortOption);
+                // console.log('server receive', search, sortOption);
 
                 const query = {};
 
@@ -118,7 +120,7 @@ async function run() {
                 const result = await studentsCollection.find(query).sort(sort).toArray();
                 res.send(result);
             } catch (error) {
-                console.error("Error fetching students:", error);
+                // console.error("Error fetching students:", error);
                 res.status(500).send({ error: "Failed to fetch students" });
             }
         });
@@ -138,7 +140,7 @@ async function run() {
                 res.send(topPartners);
             }
             catch (error) {
-                console.error("Error fetching top study partners:", error);
+                // console.error("Error fetching top study partners:", error);
                 res.status(500).send({ error: "Failed to fetch top partners" });
             }
         });
@@ -175,7 +177,7 @@ async function run() {
 
                 res.send({ success: true, message: "Partner count incremented" });
             } catch (error) {
-                console.error("Error incrementing partner count:", error);
+                // console.error("Error incrementing partner count:", error);
                 res.status(500).send({ error: "Internal server error" });
             }
 
@@ -195,7 +197,7 @@ async function run() {
                 const result = await newRequestPartnerProfileCollection.insertOne(requestData);
                 res.send({ success: true, message: "Partner request saved", result });
             } catch (error) {
-                console.error("Error saving partner request:", error);
+                // console.error("Error saving partner request:", error);
                 res.status(500).send({ error: "Internal server error" });
             }
         });
@@ -218,7 +220,7 @@ async function run() {
                 res.send(result);
             }
             catch (error) {
-                console.error(error);
+                // console.error(error);
                 res.status(500).send({ error: "Failed to fetch partner requests" });
             }
         });
@@ -236,7 +238,7 @@ async function run() {
 
                 res.send({ success: true, message: "Request deleted" });
             } catch (error) {
-                console.error(error);
+                // console.error(error);
                 res.status(500).send({ error: "Internal Server Error" });
             }
         });
@@ -259,14 +261,14 @@ async function run() {
 
                 res.send({ success: true, message: "Request updated successfully" });
             } catch (error) {
-                console.error(error);
+                // console.error(error);
                 res.status(500).send({ error: "Failed to update request" });
             }
         });
 
 
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     }
     finally {
