@@ -57,14 +57,90 @@ async function run() {
 
 
         // Find Study Partners
+        // app.get('/students', async (req, res) => {
+
+        //     // const email = req.query.email;
+        //     const cursor = studentsCollection.find();
+        //     const result = await cursor.toArray();
+        //     res.send(result)
+        // })
+
+        // Find Study Partners with Search (Subject, Name, Location) and Sort (Experience, Rating, Name)
         app.get('/students', async (req, res) => {
+            try {
+                const search = req.query.search || ""; // e.g. ?search=math
+                const sortOption = req.query.sort || ""; // e.g. ?sort=experience
+                console.log('server receive', search, sortOption);
+                
+                const query = {};
 
-            // const email = req.query.email;
+                // Search by Subject (case-insensitive)
+                // if (search) {
+                //     query.subject = { $regex: search, $options: "i" };
+                // }
+                //  If search text exists, match against name, subject, or location
+                if (search) {
+                    query.$or = [
+                        { name: { $regex: search, $options: "i" } },
+                        { subject: { $regex: search, $options: "i" } },
+                        { location: { $regex: search, $options: "i" } }
+                    ];
+                }
 
-            const cursor = studentsCollection.find();
-            const result = await cursor.toArray();
-            res.send(result)
-        })
+                //  Sort setup
+                let sort = {};
+                if (sortOption === "rating") {
+                    sort = { rating: -1 }; // High to Low
+                } else if (sortOption === "name") {
+                    sort = { name: 1 }; // A → Z
+                }
+
+                //  Special manual sort for Experience Level
+                if (sortOption === "experience") {
+                    const data = await studentsCollection.find(query).toArray();
+                    const order = { Beginner: 1, Intermediate: 2, Advanced: 3 };
+                    data.sort((a, b) => order[a.experienceLevel] - order[b.experienceLevel]);
+                    return res.send(data);
+                }
+
+                //  Build Sort Option
+                // let sort = {};
+                // if (sortOption === "experience") {
+                //     // experienceLevel: Beginner < Intermediate < Expert
+                //     // We'll sort using a custom order manually later
+                //     const data = await studentsCollection.find(query).toArray();
+
+                //     const order = { Beginner: 1, Intermediate: 2, Expert: 3 };
+                //     data.sort((a, b) => order[a.experienceLevel] - order[b.experienceLevel]);
+                //     return res.send(data);
+                // } else if (sortOption === "rating") {
+                //     sort = { rating: -1 }; // highest first
+                // } else if (sortOption === "name") {
+                //     sort = { name: 1 }; // alphabetical
+                // }
+
+                //  Otherwise, regular query with optional sort
+                const result = await studentsCollection.find(query).sort(sort).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching students:", error);
+                res.status(500).send({ error: "Failed to fetch students" });
+            }
+        });
+
+
+
+        // Fetch with optional sort
+        //         const result = await studentsCollection.find(query).sort(sort).toArray();
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error("Error fetching students:", error);
+        //         res.status(500).send({ error: "Failed to fetch students" });
+        //     }
+        // });
+
+
+
 
 
 
@@ -79,14 +155,12 @@ async function run() {
                     .toArray();
 
                 res.send(topPartners);
-            } 
+            }
             catch (error) {
                 console.error("Error fetching top study partners:", error);
                 res.status(500).send({ error: "Failed to fetch top partners" });
             }
         });
-
-
 
 
 
