@@ -5,6 +5,15 @@ const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 3000;
 
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./b12-a10-poroshstudymate-firebase-admin-key.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
 
 // middleware
 app.use(cors());
@@ -13,6 +22,27 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('studyMate server is available');
 })
+
+const verifyFireBaseToken = async (req, res, next) => {
+    // console.log('in the verify middleware', req.headers.authorization)
+    if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = req.headers.authorization.split(' ')[1]
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.token_email = decoded.email;
+        console.log('after decode token validation', decoded)
+        next();
+    }
+    catch {
+        console.log('invalid token')
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.y6dazfp.mongodb.net/?appName=Cluster0`;
@@ -71,7 +101,7 @@ async function run() {
                 const search = req.query.search || ""; // e.g. ?search=math
                 const sortOption = req.query.sort || ""; // e.g. ?sort=experience
                 console.log('server receive', search, sortOption);
-                
+
                 const query = {};
 
                 // Search by Subject (case-insensitive)
@@ -163,7 +193,7 @@ async function run() {
         });
 
 
-
+        // verifyFireBaseToken
         // GET single partner for PartnerDetails
         app.get('/students/:id', async (req, res) => {
             const id = req.params.id
@@ -239,16 +269,23 @@ async function run() {
             }
         });
 
-
+        // verifyFireBaseToken
         // Get all requests data from request_partner of a specific user 
         app.get("/request_partner", async (req, res) => {
+            // console.log('headers', req.headers)
+            // console.log('headers', req)
             const email = req.query.email;
             if (!email) return res.status(400).send({ error: "Email query missing" });
+
+            // if (email !== req.token_email) {
+            //     return res.status(403).send({ message: 'forbidden access' })
+            // }
 
             try {
                 const result = await newRequestPartnerProfileCollection.find({ requesterEmail: email }).toArray();
                 res.send(result);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(error);
                 res.status(500).send({ error: "Failed to fetch partner requests" });
             }
