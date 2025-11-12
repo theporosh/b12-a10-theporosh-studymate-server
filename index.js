@@ -25,10 +25,11 @@ app.get('/', (req, res) => {
 
 const verifyFireBaseToken = async (req, res, next) => {
     // console.log('in the verify middleware', req.headers.authorization)
-    if (!req.headers.authorization) {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
         return res.status(401).send({ message: 'unauthorized access' })
     }
-    const token = req.headers.authorization.split(' ')[1]
+    const token = authorization.split(' ')[1]
     if (!token) {
         return res.status(401).send({ message: 'unauthorized access' })
     }
@@ -38,7 +39,7 @@ const verifyFireBaseToken = async (req, res, next) => {
         console.log('after decode token validation', decoded)
         next();
     }
-    catch {
+    catch (error) {
         console.log('invalid token')
         return res.status(401).send({ message: 'unauthorized access' })
     }
@@ -67,33 +68,16 @@ async function run() {
         // add database related apis here
 
         // Create Partner Profile api
-        app.post('/partners', async (req, res) => {
+        app.post('/partners', verifyFireBaseToken, async (req, res) => {
+            // console.log('headers in the post', req.headers);
             const newPartner = req.body;
             const result = await newPartnerProfileCollection.insertOne(newPartner);
             res.send(result);
-            // same student check
-            // const email = req.body.email;
-            // const query = { email: email }
-            // const existingStudent = await newPartnerProfileCollection.findOne(query);
-            // if (existingStudent) {
-            //     res.send({message : 'student already exist'})
-            // }
-            // else {
-            //     const result = await newPartnerProfileCollection.insertOne(newPartner);
-            //     res.send(result);
-            // }
+            
         })
 
 
 
-        // Find Study Partners
-        // app.get('/students', async (req, res) => {
-
-        //     // const email = req.query.email;
-        //     const cursor = studentsCollection.find();
-        //     const result = await cursor.toArray();
-        //     res.send(result)
-        // })
 
         // Find Study Partners with Search (Subject, Name, Location) and Sort (Experience, Rating, Name)
         app.get('/students', async (req, res) => {
@@ -104,10 +88,7 @@ async function run() {
 
                 const query = {};
 
-                // Search by Subject (case-insensitive)
-                // if (search) {
-                //     query.subject = { $regex: search, $options: "i" };
-                // }
+                
                 //  If search text exists, match against name, subject, or location
                 if (search) {
                     query.$or = [
@@ -133,22 +114,6 @@ async function run() {
                     return res.send(data);
                 }
 
-                //  Build Sort Option
-                // let sort = {};
-                // if (sortOption === "experience") {
-                //     // experienceLevel: Beginner < Intermediate < Expert
-                //     // We'll sort using a custom order manually later
-                //     const data = await studentsCollection.find(query).toArray();
-
-                //     const order = { Beginner: 1, Intermediate: 2, Expert: 3 };
-                //     data.sort((a, b) => order[a.experienceLevel] - order[b.experienceLevel]);
-                //     return res.send(data);
-                // } else if (sortOption === "rating") {
-                //     sort = { rating: -1 }; // highest first
-                // } else if (sortOption === "name") {
-                //     sort = { name: 1 }; // alphabetical
-                // }
-
                 //  Otherwise, regular query with optional sort
                 const result = await studentsCollection.find(query).sort(sort).toArray();
                 res.send(result);
@@ -157,20 +122,6 @@ async function run() {
                 res.status(500).send({ error: "Failed to fetch students" });
             }
         });
-
-
-
-        // Fetch with optional sort
-        //         const result = await studentsCollection.find(query).sort(sort).toArray();
-        //         res.send(result);
-        //     } catch (error) {
-        //         console.error("Error fetching students:", error);
-        //         res.status(500).send({ error: "Failed to fetch students" });
-        //     }
-        // });
-
-
-
 
 
 
@@ -194,29 +145,17 @@ async function run() {
 
 
         // verifyFireBaseToken
-        // GET single partner for PartnerDetails
-        app.get('/students/:id', async (req, res) => {
+        // GET single partner for PartnerDetails by press View Profile button
+        app.get('/students/:id', verifyFireBaseToken, async (req, res) => {
             const id = req.params.id
-            // console.log('need user with id' , id)
-            // const result = await studentsCollection.findOne({ _id: new ObjectId(id) });
-            // res.send(result);
-
-
-            // const query = { _id: new ObjectId(id) }
             const query = { _id: id }
             const result = await studentsCollection.findOne(query);
             res.send(result)
         })
 
-        // app.post('/students', async (req, res) => {
-        //     // console.log('hitting the users post api')
-        //     const newStudent = req.body;
-        //     // console.log('user info', newStudent)
-        //     const result = await studentsCollection.insertOne(newStudent);
-        //     res.send(result);
-        // })
 
-        // PATCH partner count in partner details page and mongodb by press send partner request api
+
+        // PATCH partner count in PartnerDetails page and mongodb by press send partner request api
         app.patch("/students/:id", async (req, res) => {
             const id = req.params.id;
 
@@ -239,17 +178,9 @@ async function run() {
                 console.error("Error incrementing partner count:", error);
                 res.status(500).send({ error: "Internal server error" });
             }
-            // const query = { _id: new ObjectId(id) }
-            // const update = {
-            //     $set: {
-            //         name: updatedUser.name,
-            //         email: updatedUser.email,
-            //     }
-            // }
-            // const options = {}
-            // const result = await studentsCollection.updateOne(query, update, options)
-            // res.send(result)
+
         })
+
 
         // POST — Create(send) Partner Request details in another db called request_partner with login user name and email
 
@@ -271,15 +202,16 @@ async function run() {
 
         // verifyFireBaseToken
         // Get all requests data from request_partner of a specific user 
-        app.get("/request_partner", async (req, res) => {
+        // My Connections
+        app.get("/request_partner", verifyFireBaseToken, async (req, res) => {
             // console.log('headers', req.headers)
             // console.log('headers', req)
             const email = req.query.email;
             if (!email) return res.status(400).send({ error: "Email query missing" });
 
-            // if (email !== req.token_email) {
-            //     return res.status(403).send({ message: 'forbidden access' })
-            // }
+            if (email !== req.token_email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
 
             try {
                 const result = await newRequestPartnerProfileCollection.find({ requesterEmail: email }).toArray();
@@ -291,7 +223,7 @@ async function run() {
             }
         });
 
-
+        // My Connections
         // Delete a request from db request_partner
         app.delete("/request_partner/:id", async (req, res) => {
             const id = req.params.id;
@@ -309,7 +241,7 @@ async function run() {
             }
         });
 
-
+        // My Connections
         //  Update a request from request_partner
         app.patch("/request_partner/:id", async (req, res) => {
             const id = req.params.id;
@@ -333,15 +265,6 @@ async function run() {
         });
 
 
-        // app.delete('/students/:id', async (req, res) => {
-        //     // console.log(req.params.id)
-        //     const id = req.params.id
-        //     // console.log('delete users');
-        //     const query = { _id: new ObjectId(id) }
-        //     const result = await studentsCollection.deleteOne(query);
-        //     res.send(result);
-        // })
-
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -358,20 +281,5 @@ app.listen(port, () => {
 })
 
 
-// const users = [
-//     { id: 1, name: 'rahim', email: 'rahim@yahoo.com' },
-//     { id: 2, name: 'karim', email: 'karim@yahoo.com' },
-//     { id: 3, name: 'roton', email: 'roton@yahoo.com' },
-// ]
 
-// app.get('/users', (req, res) => {
-//     res.send(users);
-// })
-// app.post('/users', (req, res) => {
-//     console.log('post method called', req.body);
-//     const newUser = req.body;
-//     newUser.id = users.length + 1;
-//     users.push(newUser)
-//     res.send(newUser);
-// })
 
